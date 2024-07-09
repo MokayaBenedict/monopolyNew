@@ -1,4 +1,3 @@
-# main.py
 from player import Player
 from computer_logic import computerTurn
 from board import board
@@ -35,7 +34,7 @@ def play_game():
                     print(f"\n{current_player.token}, do you want to buy {property['name']} for ${property['price']}?")
                     buy_option = input("Press 'y' to buy or 'n' to skip: ").lower()
                     if buy_option == 'y':
-                        current_player.buyProperty()
+                        current_player.buyProperty(property)
 
             print(f"\n{current_player.token}, do you want to mortgage a property?")
             mortgage_option = input("Press 'y' to mortgage or 'n' to continue: ").lower()

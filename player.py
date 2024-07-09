@@ -1,6 +1,5 @@
-# player.py
 import random
-from board import *
+from board import board
 from cards import draw_card, handle_card, chance_cards, community_chest_cards
 
 class Player:
@@ -15,6 +14,8 @@ class Player:
         self.in_jail = False
         self.jail_turns = 0
         self.get_out_of_jail_free = False
+        self.houses = 0
+        self.hotels = 0
 
     def tokenSelection(self):
         tokens = ["Thor", "Strange", "IronMan", "Hawkeye"]
@@ -41,7 +42,6 @@ class Player:
             self.money+=200
             print(f"{self.name} collected $200 for passing GO")
 
-
         if current_square['name'] == "Chance" and current_square['price']==0:
             chance_card = draw_card(chance_cards)
             handle_card(self, chance_card, players)
@@ -55,26 +55,68 @@ class Player:
                 if current_square not in self.properties and current_square not in self.mortgaged_properties:
                     # Handle unowned property
                     print(f"{self.token}, you landed on an unowned property: {current_square['name']}.")
+                    self.handlePropertyPurchase(current_square)
                 elif current_square in self.properties:
                     # Handle owned property
-                    print(f"{self.token}, you landed on your own property: {current_square['name']}.")
+                    self.handleRentPayment(current_square, players)
                 elif current_square in self.mortgaged_properties:
                     # Handle mortgaged property
                     print(f"{self.token}, you landed on a mortgaged property: {current_square['name']}.")
 
-    def buyProperty(self):
-        property = board[self.position]
-        if property not in self.properties and property not in self.mortgaged_properties:
-            
-            if self.money >= property['price']:
-                self.properties.append(property)
-                print(f"{self.token} bought {property['name']} for ${property['price']}")
-                self.money -= property['price']
-                print(f"Your balance is: {self.money}")
-            else:
-                print(f"{self.token} does not have enough money to buy {property['name']}")
+    def handlePropertyPurchase(self, property):
+        print(f"{self.token}, do you want to buy {property['name']} for ${property['price']}?")
+        buy_option = input("Press 'y' to buy or 'n' to skip: ").lower()
+        if buy_option == 'y':
+            self.buyProperty(property)
+
+    def buyProperty(self, property):
+        if self.money >= property['price']:
+            self.properties.append(property)
+            print(f"{self.token} bought {property['name']} for ${property['price']}")
+            self.money -= property['price']
+            print(f"Your balance is: {self.money}")
         else:
-            print(f"{property['name']} is already owned.")
+            print(f"{self.token} does not have enough money to buy {property['name']}")
+
+    def handleRentPayment(self, property, players):
+        owner = self.findPropertyOwner(property, players)
+        if owner and owner != self:
+            rent_amount = self.calculateRent(property)
+            print(f"{self.token}, you owe ${rent_amount} rent to {owner.token}.")
+            if self.money >= rent_amount:
+                self.money -= rent_amount
+                owner.money += rent_amount
+                print(f"Payment successful.")
+            else:
+                self.handleBankruptcy(players)
+        else:
+            print(f"{self.token}, you landed on your own property: {property['name']}.")
+
+    def calculateRent(self, property):
+        base_rent = property.get('rent', 0)
+        if 'house_price' in property and 'hotel_price' in property:
+            total_buildings = self.houses + self.hotels
+            return base_rent + total_buildings * property['rent_increment']
+        return base_rent
+
+    def findPropertyOwner(self, property, players):
+        for player in players:
+            if property in player.properties:
+                return player
+        return None
+
+    def handleBankruptcy(self, players):
+        print(f"{self.token} is bankrupt!")
+        # Remove player from the game
+        players.remove(self)
+        # Transfer properties to the bank or auction them
+        self.sellProperties(players)
+
+    def sellProperties(self, players):
+        for property in self.properties[:]:  # Iterate over a copy of the list
+            self.properties.remove(property)
+            # Transfer property to the bank or auction it
+            print(f"{property['name']} has been returned to the bank.")
 
     def mortgageProperty(self):
         if not self.properties:
@@ -102,3 +144,15 @@ class Player:
             print(f"{self.token} mortgaged {property_to_mortgage['name']} for ${mortgage_value}")
         else:
             print("Invalid choice.")
+
+    def buyHouse(self, property):
+        if property in self.properties and self.money >= property.get('house_price', 0):
+            self.houses += 1
+            self.money -= property['house_price']
+            print(f"{self.token} bought a house on {property['name']}.")
+
+    def buyHotel(self, property):
+        if property in self.properties and self.money >= property.get('hotel_price', 0):
+            self.hotels += 1
+            self.money -= property['hotel_price']
+            print(f"{self.token} bought a hotel on {property['name']}.")
