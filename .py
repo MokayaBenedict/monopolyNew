@@ -19,8 +19,10 @@ def play_game():
     current_player = player1
 
     while True:
+        current_square = board[current_player.position] 
+
         if current_player.is_computer:
-            computerTurn(current_player, players)
+            computerTurn(current_player, players, board, current_square)
         else:
             print(f"\n{current_player.token}'s turn.")
             input("Press Enter to roll the dice.\n")

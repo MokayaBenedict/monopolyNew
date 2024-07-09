@@ -15,7 +15,7 @@ def computerDecisionToMortgage(player):
     if player.properties:
         player.mortgageProperty()
 
-def computerTurn(player, players):
+def computerTurn(player, players,board,current_square):
     print(f"\n{player.token}'s turn.")
     dice1, dice2 = player.rollDice()
     movePlayer(player, dice1 + dice2, players)
