@@ -40,7 +40,7 @@ def play_game():
 
             current_square = board[current_player.position]
 
-            # Handle special squares
+            # Handle special squares of the game
             if current_square['name'] == "Income Tax":
                 current_player.payTax(200)
             elif current_square['name'] == "Luxury Tax":
